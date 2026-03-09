@@ -1,0 +1,180 @@
+syntax = "proto3";
+
+package auth.v1;
+
+option go_package = "auth-service/internal/transport/grpc/gen;auth_v1";
+
+import "google/api/annotations.proto";
+
+// Сервис аутентификации и управления сессиями
+service AuthService {
+
+  // Регистрирует нового юзера по почте и паролю
+  rpc Register(RegisterRequest) returns (RegisterResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/register"
+      body: "*"
+    };
+  }
+
+  // Авторизует юзера и возвращает токены доступа
+  rpc Login(LoginRequest) returns (LoginResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/login"
+      body: "*"
+    };
+  }
+
+  // Завершает сессию по переданному рефреш токену
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/logout"
+      body: "*"
+    };
+  }
+
+  // Выдает новую пару токенов по действующему рефреш токену
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/refresh"
+      body: "*"
+    };
+  }
+
+  // Создает токен для сброса пароля и отправляет письмо
+  rpc RequestPasswordReset(RequestPasswordResetRequest)
+      returns (RequestPasswordResetResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/password-reset/request"
+      body: "*"
+    };
+  }
+
+  // Устанавливает новый пароль с использованием токена из письма
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/password-reset/reset"
+      body: "*"
+    };
+  }
+
+
+  // Проверяет валидность токена и возвращает инфу по юзеру если все ок
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/auth/validate"
+    };
+  }
+
+  // Достает информацию о текущем авторизованном юзере по токену из заголовка
+  rpc GetMe(GetMeRequest) returns (GetMeResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/auth/me"
+    };
+  }
+}
+
+// Сущность пользователя системы
+message User {
+  // Уникальный uuid пользователя
+  string id = 1;
+  // Адрес электронной почты
+  string email = 2;
+  // Дата создания аккаунта в unix timestamp
+  int64 created_at = 3;
+}
+
+// Объект текущей сессии
+message Session {
+  // Короткоживущий токен для доступа к ручкам
+  string access_token = 1;
+  // Долгоживущий токен для обновления сессии
+  string refresh_token = 2;
+  // Время когда протухнет access токен в unix timestamp
+  int64 expires_at = 3;
+  // Основные данные юзера
+  User user = 4;
+}
+
+message RegisterRequest {
+  // Email нового юзера
+  string email = 1;
+  // Пароль который должен пройти политики безопасности
+  string password = 2;
+}
+
+message RegisterResponse {
+  // Сгенерированный айдишник
+  string user_id = 1;
+  // Новая сессия сразу после регистрации
+  Session session = 2;
+}
+
+message LoginRequest {
+  // Почта для входа
+  string email = 1;
+  // Актуальный пароль
+  string password = 2;
+}
+
+message LoginResponse {
+  // Сессия при успешном входе
+  Session session = 1;
+}
+
+message LogoutRequest {
+  // Рефреш токен который нужно отозвать
+  string refresh_token = 1;
+}
+
+message LogoutResponse {}
+
+message RefreshTokenRequest {
+  // Действующий рефреш токен
+  string refresh_token = 1;
+}
+
+message RefreshTokenResponse {
+  // Свежая сессия с новыми токенами
+  Session session = 1;
+}
+
+message RequestPasswordResetRequest {
+  // Email на который нужно отправить ссылку для сброса
+  string email = 1;
+}
+
+message RequestPasswordResetResponse {}
+
+message ResetPasswordRequest {
+  // Токен который мы выслали на почту
+  string token = 1;
+  // Новый пароль пользователя
+  string new_password = 2;
+}
+
+message ResetPasswordResponse {
+  // Сессия авторизации чтобы сразу залогинить юзера
+  Session session = 1;
+}
+
+message ValidateTokenRequest {
+  // Access токен который нужно проверить
+  string access_token = 1;
+}
+
+message ValidateTokenResponse {
+  // Флаг успешной проверки
+  bool valid = 1;
+  // Данные юзера из токена
+  User user = 2;
+  // Время жизни проверенного токена
+  int64 expires_at = 3;
+}
+
+message GetMeRequest {}
+
+message GetMeResponse {
+  // Профиль текущего юзера
+  User user = 1;
+}

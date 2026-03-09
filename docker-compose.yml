@@ -1,0 +1,75 @@
+version: "3.8"
+
+services:
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+      - "8081:8081"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=auth
+      - DB_USER=auth
+      - DB_PASSWORD=auth
+      - JWT_SECRET=dev-secret-key-change-in-prod
+      - LOG_LEVEL=debug
+      - HTTP_PORT=8080
+      - JWT_PRIVATE_KEY=keys/private.pem
+      - JWT_PUBLIC_KEY=keys/public.pem
+      - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4317
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: auth
+      POSTGRES_USER: auth
+      POSTGRES_PASSWORD: auth
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth -d auth"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrator:
+    image: ghcr.io/kukymbr/goose-docker:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - GOOSE_DRIVER=postgres
+      - GOOSE_DBSTRING=postgres://auth:auth@postgres:5432/auth?sslmode=disable
+      - GOOSE_MIGRATION_DIR=/migrations
+    volumes:
+      - ./migrations:/migrations
+    command: ["up"]
+
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.47
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+volumes:
+  pgdata:

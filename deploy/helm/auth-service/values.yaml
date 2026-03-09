@@ -1,0 +1,37 @@
+replicaCount: 2
+
+image:
+  repository: auth-service
+  pullPolicy: Never
+  tag: "latest"
+
+env:
+  DB_HOST: "host.docker.internal"
+  DB_PORT: "5432"
+  DB_NAME: "auth"
+  DB_USER: "auth"
+  DB_PASSWORD: "auth"
+  JWT_SECRET: "dev-secret-key-change-in-prod"
+  LOG_LEVEL: "debug"
+  HTTP_PORT: "8080"
+  JWT_PRIVATE_KEY: "keys/private.pem"
+  JWT_PUBLIC_KEY: "keys/public.pem"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "host.docker.internal:4317"
+
+service:
+  type: ClusterIP
+  port: 8080
+  grpcPort: 9090
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+autoscaling:
+  enabled: false
+
+serviceAccount:
+  create: false

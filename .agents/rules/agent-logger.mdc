@@ -1,0 +1,29 @@
+---
+description: Ensure AI agents log their work and code changes to the .agents folder
+alwaysApply: true
+---
+
+# Agent Work Logger
+
+According to project requirements, every task performed by an AI agent must be logged in the `.agents/ai_changelog.md` file.
+
+**When to apply:**
+- After successfully completing a user request or task
+- After writing, modifying, or deleting code
+- Before concluding your response
+
+**Instructions:**
+1. Add a new log entry to `.agents/ai_changelog.md`.
+2. Append the new entry to the end of the file.
+3. Keep it concise but descriptive.
+
+**Format Example:**
+```markdown
+## [YYYY-MM-DD HH:MM] - Task Summary
+
+- **Task**: Brief description of the request
+- **Files Modified**: 
+  - `path/to/file1.go`
+  - `path/to/file2.ts`
+- **Changes**: Details about what was changed, architectural decisions, or bugs fixed.
+```

@@ -1,0 +1,21 @@
+deps:
+  - github.com/googleapis/googleapis@master
+
+generate:
+  inputs:
+    - directory: "."
+  plugins:
+    - name: go
+      out: internal/transport/grpc/gen
+      opts:
+        paths: source_relative
+    - name: go-grpc
+      out: internal/transport/grpc/gen
+      opts:
+        paths: source_relative
+    - name: grpc-gateway
+      out: internal/transport/grpc/gen
+      opts:
+        paths: source_relative
+    - name: openapiv2
+      out: docs/swagger
