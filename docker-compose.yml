@@ -3,7 +3,7 @@ version: "3.8"
 services:
   auth-service:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     depends_on:
       migrator:
@@ -53,7 +53,7 @@ services:
       - GOOSE_DBSTRING=postgres://auth:auth@postgres:5432/auth?sslmode=disable
       - GOOSE_MIGRATION_DIR=/migrations
     volumes:
-      - ./migrations:/migrations
+      - ./backend/migrations:/migrations
     command: ["up"]
 
   prometheus:
@@ -61,7 +61,7 @@ services:
     ports:
       - "9091:9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./backend/prometheus.yml:/etc/prometheus/prometheus.yml
 
   jaeger:
     image: jaegertracing/all-in-one:1.47
@@ -70,6 +70,20 @@ services:
       - "4317:4317"
     environment:
       - COLLECTOR_OTLP_ENABLED=true
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - API_URL=http://auth-service:8080
+    depends_on:
+      - auth-service
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
 
 volumes:
   pgdata:
